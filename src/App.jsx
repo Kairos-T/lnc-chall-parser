@@ -58,8 +58,8 @@ export default function LNCConfigGenerator() {
   // Handle adding and editing hints
   const addHint = () => {
     const costInt = parseInt(hintCost);
-    if (!hintText || isNaN(costInt) || costInt <= 0) {
-      setHintError('Hint cost must be a number greater than 0');
+    if (!hintText || isNaN(costInt) || costInt < 0) {
+      setHintError('Hint cost must be a number greater than 1');
       return;
     }
     setHintError('');
