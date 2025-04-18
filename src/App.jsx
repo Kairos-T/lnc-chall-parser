@@ -36,6 +36,9 @@ export default function LNCConfigGenerator() {
   const [portError, setPortError] = useState('');
   const [copied, setCopied] = useState('');
 
+  // track which tab is active
+  const [activeTab, setActiveTab] = useState('json');
+
   // Handle form field changes and perform inline validations
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -133,6 +136,11 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
 ## Flag
 - \`${form.flag || 'LNC25{...}'}\``;
 
+  // decide which output to copy/download
+  const outputText = activeTab === 'json' ? jsonOutput : readmeOutput;
+  const outputName = activeTab === 'json' ? 'chall.json'  : 'README.md';
+  const outputType = activeTab === 'json' ? 'json'        : 'readme';
+
   const downloadFile = (content, filename) => {
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const a = document.createElement('a');
@@ -161,6 +169,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           </div>
         )}
 
+        {/* Challenge Information */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Challenge Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -231,6 +240,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           </div>
         </section>
 
+        {/* Hints */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Hints</h2>
           <div className="grid md:grid-cols-3 gap-2">
@@ -253,7 +263,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           </div>
           {hintError && <p className="text-red-500 text-xs">{hintError}</p>}
           {form.hints.length > 0 && (
-            <Card className="bg-gray-800 text-white">
+            <Card className="bg-gray-800 border border-gray-700 text-white rounded-md">
               <CardContent className="p-4">
                 <ul className="list-disc ml-5 space-y-1">
                   {form.hints.map((hint, idx) => (
@@ -275,6 +285,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           )}
         </section>
 
+        {/* Files */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Files</h2>
           <div className="grid md:grid-cols-3 gap-2">
@@ -289,7 +300,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
             </Button>
           </div>
           {files.length > 0 && (
-            <Card className="bg-gray-800 text-white">
+            <Card className="bg-gray-800 border border-gray-700 text-white rounded-md">
               <CardContent className="p-4">
                 <ul className="list-disc ml-5 space-y-1">
                   {files.map((f, idx) => (
@@ -311,9 +322,14 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           )}
         </section>
 
+        {/* Outputs */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Outputs</h2>
-          <Tabs defaultValue="json" className="transition-all duration-300 ease-in-out">
+          <Tabs
+            value={activeTab}
+            onValueChange={(val) => setActiveTab(val)}
+            className="transition-all duration-300 ease-in-out"
+          >
             <div className="flex items-center justify-between mb-2 gap-4">
               <TabsList className="bg-transparent p-0 flex gap-2">
                 <TabsTrigger
@@ -331,7 +347,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
               </TabsList>
               <div className="flex items-center gap-2">
                 <Button
-                  onClick={() => copyToClipboard(jsonOutput, 'json')}
+                  onClick={() => copyToClipboard(outputText, outputType)}
                   variant="ghost"
                   size="icon"
                   className="text-gray-400 hover:text-white hover:bg-transparent transition"
@@ -340,7 +356,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
                   <ClipboardIcon className="w-4 h-4" />
                 </Button>
                 <Button
-                  onClick={() => downloadFile(jsonOutput, 'chall.json')}
+                  onClick={() => downloadFile(outputText, outputName)}
                   variant="ghost"
                   size="icon"
                   className="text-gray-400 hover:text-white hover:bg-transparent transition"
