@@ -39,17 +39,16 @@ export default function LNCConfigGenerator() {
   // track which tab is active
   const [activeTab, setActiveTab] = useState('json');
 
-  // Handle form field changes and perform inline validations
+  // Inline validation for flag & port
   const handleChange = (e) => {
     const { name, value } = e.target;
-    let updated = { ...form, [name]: value };
+    const updated = { ...form, [name]: value };
 
     if (name === 'flag') {
-      const isValid = /^LNC25\{.*\}$/.test(value);
-      setFlagValid(isValid);
+      setFlagValid(/^LNC25\{.*\}$/.test(value));
     }
     if (name === 'port') {
-      if (value && (!/^\d+$/.test(value) || parseInt(value) < 1 || parseInt(value) > 65535)) {
+      if (value && (!/^\d+$/.test(value) || +value < 1 || +value > 65535)) {
         setPortError('Port must be a number between 1 and 65535');
       } else {
         setPortError('');
@@ -58,36 +57,34 @@ export default function LNCConfigGenerator() {
     setForm(updated);
   };
 
-  // Handle adding and editing hints
+  // Hints CRUD
   const addHint = () => {
-    const costInt = parseInt(hintCost, 10);
-    if (!hintText || isNaN(costInt) || costInt < 0) {
-      setHintError('Hint cost must be a number greater than 0');
+    const cost = parseInt(hintCost, 10);
+    if (!hintText || isNaN(cost) || cost < 0) {
+      setHintError('Hint cost must be a number ≥ 0');
       return;
     }
     setHintError('');
-    const newHint = { description: hintText, cost: costInt };
-    const updatedHints = [...form.hints];
+    const newHint = { description: hintText, cost };
+    const updated = [...form.hints];
     if (editingHintIdx !== null) {
-      updatedHints[editingHintIdx] = newHint;
+      updated[editingHintIdx] = newHint;
       setEditingHintIdx(null);
     } else {
-      updatedHints.push(newHint);
+      updated.push(newHint);
     }
-    setForm({ ...form, hints: updatedHints });
+    setForm(f => ({ ...f, hints: updated }));
     setHintText('');
     setHintCost('');
   };
-
-  const deleteHint = (idx) => setForm({ ...form, hints: form.hints.filter((_, i) => i !== idx) });
-  const editHint = (idx) => {
-    const hint = form.hints[idx];
-    setHintText(hint.description);
-    setHintCost(hint.cost);
-    setEditingHintIdx(idx);
+  const deleteHint = (i) => setForm(f => ({ ...f, hints: f.hints.filter((_, idx) => idx !== i) }));
+  const editHint   = (i) => {
+    setHintText(form.hints[i].description);
+    setHintCost(form.hints[i].cost);
+    setEditingHintIdx(i);
   };
 
-  // Handle file inputs
+  // Files CRUD
   const addFile = () => {
     if (!fileInput) return;
     const updated = [...files];
@@ -100,13 +97,11 @@ export default function LNCConfigGenerator() {
     setFiles(updated);
     setFileInput('');
   };
-
-  const editFile = (idx) => {
-    setFileInput(files[idx]);
-    setEditingFileIdx(idx);
+  const deleteFile = (i) => setFiles(fs => fs.filter((_, idx) => idx !== i));
+  const editFile   = (i) => {
+    setFileInput(files[i]);
+    setEditingFileIdx(i);
   };
-
-  const deleteFile = (idx) => setFiles(files.filter((_, i) => i !== idx));
 
   // Outputs
   const jsonOutput = JSON.stringify({
@@ -116,8 +111,8 @@ export default function LNCConfigGenerator() {
     requirements: form.requirements.length ? form.requirements : undefined
   }, null, 4);
 
-  const readmeOutput = `# ${form.name || '[Challenge Name]'}\n\n${form.description || 'Challenge description goes here.'}
-  
+  const readmeOutput = `# ${form.name || '[Challenge Name]'}\n\n${form.description || 'Description here.'}
+
 ## Summary
 - **Author:** ${form.author || '[Author]'}
 - **Discord:** ${form.discord || '[Discord]'}
@@ -125,21 +120,28 @@ export default function LNCConfigGenerator() {
 - **Difficulty:** ${form.difficulty}
 
 ## Hints
-${form.hints.length ? form.hints.map(h => `- \`${h.description}\` (${h.cost} points)`).join('\n') : 'None'}
+${form.hints.length 
+    ? form.hints.map(h => `- \`${h.description}\` (${h.cost} pts)`).join('\n') 
+    : 'None'
+}
 
 ## Files
-${files.length ? files.map(f => `- [\`${f}\`](./dist/${f})`).join('\n') : 'None'}
+${files.length 
+    ? files.map(f => `- [\`${f}\`](./dist/${f})`).join('\n') 
+    : 'None'
+}
 
 ## Services
 ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
 
 ## Flag
-- \`${form.flag || 'LNC25{...}'}\``;
+- \`${form.flag || 'LNC25{...}'}\`
+`;
 
-  // decide which output to copy/download
+  // Which to copy/download?
   const outputText = activeTab === 'json' ? jsonOutput : readmeOutput;
-  const outputName = activeTab === 'json' ? 'chall.json'  : 'README.md';
-  const outputType = activeTab === 'json' ? 'json'        : 'readme';
+  const outputName = activeTab === 'json' ? 'chall.json' : 'README.md';
+  const outputType = activeTab === 'json' ? 'json' : 'readme';
 
   const downloadFile = (content, filename) => {
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
@@ -155,8 +157,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
     setTimeout(() => setCopied(''), 2000);
   };
 
-  // Global error summary (checks for flag and port errors)
-  const hasErrors = !flagValid || portError;
+  const hasErrors = !flagValid || !!portError;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white font-sans flex justify-center py-6">
@@ -165,11 +166,11 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
 
         {hasErrors && (
           <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 rounded">
-            Please fix the highlighted errors below before copying or downloading the config.
+            Please fix the highlighted errors before copying or downloading.
           </div>
         )}
 
-        {/* Challenge Information */}
+        {/* --- Challenge Info --- */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Challenge Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -193,7 +194,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
               onChange={handleChange}
               className="bg-gray-800 text-white border border-gray-700 rounded px-3 py-2"
             >
-              {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+              {categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
             <select
               name="difficulty"
@@ -201,7 +202,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
               onChange={handleChange}
               className="bg-gray-800 text-white border border-gray-700 rounded px-3 py-2"
             >
-              {difficulties.map(diff => <option key={diff} value={diff}>{diff}</option>)}
+              {difficulties.map(d => <option key={d} value={d}>{d}</option>)}
             </select>
             <Textarea
               className="md:col-span-2 bg-gray-800 text-white border border-gray-700"
@@ -225,7 +226,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
                 value={form.flag}
                 onChange={handleChange}
               />
-              {!flagValid && <p className="text-red-500 text-xs">Flag must be in the format LNC25{'{...}'}</p>}
+              {!flagValid && <p className="text-red-500 text-xs">Must match LNC25{'{...}'}</p>}
             </div>
             <div className="space-y-1">
               <Input
@@ -240,7 +241,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           </div>
         </section>
 
-        {/* Hints */}
+        {/* --- Hints --- */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Hints</h2>
           <div className="grid md:grid-cols-3 gap-2">
@@ -248,14 +249,14 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
               className="bg-gray-800 text-white border border-gray-700"
               placeholder="Hint"
               value={hintText}
-              onChange={(e) => setHintText(e.target.value)}
+              onChange={e => setHintText(e.target.value)}
             />
             <Input
               className="bg-gray-800 text-white border border-gray-700"
               type="number"
               placeholder="Cost"
               value={hintCost}
-              onChange={(e) => setHintCost(e.target.value)}
+              onChange={e => setHintCost(e.target.value)}
             />
             <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white" onClick={addHint}>
               Add
@@ -263,17 +264,17 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           </div>
           {hintError && <p className="text-red-500 text-xs">{hintError}</p>}
           {form.hints.length > 0 && (
-            <Card className="border border-gray-700 rounded-md">
+            <Card className="border border-gray-700 rounded-md overflow-hidden">
               <CardContent className="p-4 bg-gray-800 text-white">
                 <ul className="list-disc ml-5 space-y-1">
-                  {form.hints.map((hint, idx) => (
-                    <li key={idx} className="flex justify-between items-center">
-                      <span>{hint.description} ({hint.cost} pts)</span>
+                  {form.hints.map((h, i) => (
+                    <li key={i} className="flex justify-between items-center">
+                      <span>{h.description} ({h.cost} pts)</span>
                       <div className="space-x-2 text-sm">
-                        <button onClick={() => editHint(idx)} className="text-indigo-400 hover:underline">
+                        <button onClick={() => editHint(i)} className="text-indigo-400 hover:underline">
                           🖉 Edit
                         </button>
-                        <button onClick={() => deleteHint(idx)} className="text-red-400 hover:underline">
+                        <button onClick={() => deleteHint(i)} className="text-red-400 hover:underline">
                           🗑 Delete
                         </button>
                       </div>
@@ -285,7 +286,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           )}
         </section>
 
-        {/* Files */}
+        {/* --- Files --- */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Files</h2>
           <div className="grid md:grid-cols-3 gap-2">
@@ -293,24 +294,24 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
               className="bg-gray-800 text-white border border-gray-700 md:col-span-2"
               placeholder="Filename (e.g. chall.zip)"
               value={fileInput}
-              onChange={(e) => setFileInput(e.target.value)}
+              onChange={e => setFileInput(e.target.value)}
             />
             <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-white" onClick={addFile}>
               Add
             </Button>
           </div>
           {files.length > 0 && (
-            <Card className="border border-gray-700 rounded-md">
+            <Card className="border border-gray-700 rounded-md overflow-hidden">
               <CardContent className="p-4 bg-gray-800 text-white">
                 <ul className="list-disc ml-5 space-y-1">
-                  {files.map((f, idx) => (
-                    <li key={idx} className="flex justify-between items-center">
+                  {files.map((f, i) => (
+                    <li key={i} className="flex justify-between items-center">
                       <span>{f}</span>
                       <div className="space-x-2 text-sm">
-                        <button onClick={() => editFile(idx)} className="text-indigo-400 hover:underline">
+                        <button onClick={() => editFile(i)} className="text-indigo-400 hover:underline">
                           🖉 Edit
                         </button>
-                        <button onClick={() => deleteFile(idx)} className="text-red-400 hover:underline">
+                        <button onClick={() => deleteFile(i)} className="text-red-400 hover:underline">
                           🗑 Delete
                         </button>
                       </div>
@@ -322,25 +323,37 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           )}
         </section>
 
-        {/* Outputs */}
+        {/* --- Outputs --- */}
         <section className="space-y-4">
           <h2 className="text-xl font-semibold">Outputs</h2>
           <Tabs
             value={activeTab}
-            onValueChange={(val) => setActiveTab(val)}
+            onValueChange={setActiveTab}
             className="transition-all duration-300 ease-in-out"
           >
             <div className="flex items-center justify-between mb-2 gap-4">
               <TabsList className="bg-transparent p-0 flex gap-2">
                 <TabsTrigger
                   value="json"
-                  className="text-gray-400 data-[state=active]:text-white data-[state=active]:bg-gray-700 hover:bg-gray-700 px-4 py-2 rounded-md transition"
+                  className="
+                    text-gray-300
+                    hover:text-white hover:bg-gray-700
+                    data-[state=active]:bg-gray-700 data-[state=active]:text-white
+                    px-4 py-2 rounded-md transition
+                    focus:outline-none focus:ring-2 focus:ring-indigo-500
+                  "
                 >
                   chall.json
                 </TabsTrigger>
                 <TabsTrigger
                   value="readme"
-                  className="text-gray-400 data-[state=active]:text-white data-[state=active]:bg-gray-700 hover:bg-gray-700 px-4 py-2 rounded-md transition"
+                  className="
+                    text-gray-300
+                    hover:text-white hover:bg-gray-700
+                    data-[state=active]:bg-gray-700 data-[state=active]:text-white
+                    px-4 py-2 rounded-md transition
+                    focus:outline-none focus:ring-2 focus:ring-indigo-500
+                  "
                 >
                   README.md
                 </TabsTrigger>
@@ -368,10 +381,18 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
               </div>
             </div>
             <TabsContent value="json">
-              <Textarea className="h-96 bg-gray-800 text-white border border-gray-700 transition-all duration-300" value={jsonOutput} readOnly />
+              <Textarea
+                className="h-96 bg-gray-800 text-white border border-gray-700 transition-all duration-300"
+                value={jsonOutput}
+                readOnly
+              />
             </TabsContent>
             <TabsContent value="readme">
-              <Textarea className="h-96 bg-gray-800 text-white border border-gray-700 transition-all duration-300 mt-4" value={readmeOutput} readOnly />
+              <Textarea
+                className="h-96 bg-gray-800 text-white border border-gray-700 transition-all duration-300 mt-4"
+                value={readmeOutput}
+                readOnly
+              />
             </TabsContent>
           </Tabs>
         </section>
