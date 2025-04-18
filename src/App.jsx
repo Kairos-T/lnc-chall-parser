@@ -60,9 +60,9 @@ export default function LNCConfigGenerator() {
 
   // Handle adding and editing hints
   const addHint = () => {
-    const costInt = parseInt(hintCost);
+    const costInt = parseInt(hintCost, 10);
     if (!hintText || isNaN(costInt) || costInt < 0) {
-      setHintError('Hint cost must be a number greater than 1');
+      setHintError('Hint cost must be a number greater than 0');
       return;
     }
     setHintError('');
@@ -111,7 +111,7 @@ export default function LNCConfigGenerator() {
   // Outputs
   const jsonOutput = JSON.stringify({
     ...form,
-    port: form.port ? parseInt(form.port) : undefined,
+    port: form.port ? parseInt(form.port, 10) : undefined,
     hints: form.hints.length ? form.hints : undefined,
     requirements: form.requirements.length ? form.requirements : undefined
   }, null, 4);
@@ -263,8 +263,8 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           </div>
           {hintError && <p className="text-red-500 text-xs">{hintError}</p>}
           {form.hints.length > 0 && (
-            <Card className="bg-gray-800 border border-gray-700 text-white rounded-md">
-              <CardContent className="p-4">
+            <Card className="border border-gray-700 rounded-md">
+              <CardContent className="p-4 bg-gray-800 text-white">
                 <ul className="list-disc ml-5 space-y-1">
                   {form.hints.map((hint, idx) => (
                     <li key={idx} className="flex justify-between items-center">
@@ -300,8 +300,8 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
             </Button>
           </div>
           {files.length > 0 && (
-            <Card className="bg-gray-800 border border-gray-700 text-white rounded-md">
-              <CardContent className="p-4">
+            <Card className="border border-gray-700 rounded-md">
+              <CardContent className="p-4 bg-gray-800 text-white">
                 <ul className="list-disc ml-5 space-y-1">
                   {files.map((f, idx) => (
                     <li key={idx} className="flex justify-between items-center">
