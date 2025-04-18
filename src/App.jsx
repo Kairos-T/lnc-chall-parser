@@ -261,7 +261,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
           </div>
           {hintError && <p className="text-red-500 text-xs">{hintError}</p>}
           {form.hints.length > 0 && (
-            <Card className="border border-gray-700 rounded-md overflow-hidden bg-gray-800">
+            <Card className="border border-gray-700 rounded-md overflow-hidden">
               <CardContent className="p-4 text-white">
                 <ul className="list-disc ml-5 space-y-1">
                   {form.hints.map((h, i) => (
@@ -298,7 +298,7 @@ ${form.port ? `- Runs on port \`${form.port}\`` : 'None'}
             </Button>
           </div>
           {files.length > 0 && (
-            <Card className="border border-gray-700 rounded-md overflow-hidden bg-gray-800">
+            <Card className="border border-gray-700 rounded-md overflow-hidden">
               <CardContent className="p-4 text-white">
                 <ul className="list-disc ml-5 space-y-1">
                   {files.map((f, i) => (
